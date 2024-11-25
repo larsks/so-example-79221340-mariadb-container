@@ -1,5 +1,6 @@
 #!/bin/bash
 
+chown -R mysql /var/lib/mysql
 mysql_install_db --user=mysql --datadir=/var/lib/mysql --basedir=/usr
 
 echo "Starting temporary server"
@@ -8,6 +9,7 @@ mysqld --skip-networking --default-time-zone=SYSTEM --socket="/var/run/mysqld/my
 		--skip-slave-start \
 		--loose-innodb_buffer_pool_load_at_startup=0 \
 		--skip-ssl &
+mariadb_pid=$!
 
 echo "Waiting for database startup"
 while :; do
@@ -30,7 +32,8 @@ mysql < /etc/mysql/init.sql
 
 echo "Database and user successfully created."
 echo "Stopping temporary server"
-kill $(cat /var/run/mysqld/mysqld.pid)
+kill $mariadb_pid
+wait $mariadb_pid
 
 echo "Starting persistent server"
 exec mysqld
